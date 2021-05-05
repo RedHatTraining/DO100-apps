@@ -1,4 +1,4 @@
-USERNAME="rht-jordisola"
+USERNAME=$(whoami)
 
 MINIKUBE_DIR=$HOME"/.minikube"
 CERT_DIRECTORY="$MINIKUBE_DIR/redhat-certs"
@@ -20,18 +20,22 @@ function create_certificates() {
 
     cp $USERNAME.key $MINIKUBE_DIR/$USERNAME.key
     cp $USERNAME.crt $MINIKUBE_DIR/$USERNAME.crt
-
 }
 
-function delete_namespace() {
-    echo "Deleting namespace '${1}'..."
-    if kubectl get namespace ${1} &> /dev/null ; then
-        if ! kubectl delete namespace ${1} &> /dev/null ; then
-            echo "Error while deleting namespace ${1}"
-            exit
-        fi
+function delete_certificates() {
+    echo "Deleting certificates..."
+    if ! rm ${MINIKUBE_DIR}/$USERNAME.key ; then
+        echo "Error deleting key file ${MINIKUBE_DIR}/$USERNAME.key"
+        exit
+    fi
+
+    if ! rm ${MINIKUBE_DIR}/$USERNAME.crt; then
+        echo "Error deleting certificate file ${MINIKUBE_DIR}/$USERNAME.crt"
+        exit
     fi
 }
+
+
 
 function create_namespace() {
     echo "Creating namespace '${1}'..."
@@ -43,6 +47,15 @@ function create_namespace() {
     fi
 }
 
+function delete_namespace() {
+    echo "Deleting namespace '${1}'..."
+    if kubectl get namespace ${1} &> /dev/null ; then
+        if ! kubectl delete namespace ${1} &> /dev/null ; then
+            echo "Error while deleting namespace ${1}"
+            exit
+        fi
+    fi
+}
 function configure_kubectl_credentials() {
     echo "Creating Kubectl credentials ..."
     if ! kubectl config set-credentials $USERNAME --client-certificate=$USERNAME.crt --client-key=$USERNAME.key &> /dev/null ; then
@@ -50,10 +63,19 @@ function configure_kubectl_credentials() {
         exit
     fi
 }
+
 function create_kubectl_context() {
-    echo "Creating Kubectl context for ${1} ..."
+    echo "Creating Kubectl context $MINIKUBE_CONTEXT for namespace ${1} ..."
     if ! kubectl config set-context $MINIKUBE_CONTEXT --cluster=minikube --user=$USERNAME --namespace=${1} &> /dev/null; then
         echo "Error while creating config context"
+        exit
+    fi
+}
+
+function delete_kubectl_context() {
+    echo "Deleting Kubectl context ${MINIKUBE_CONTEXT} ..."
+    if ! kubectl config delete-context $MINIKUBE_CONTEXT &> /dev/null; then
+        echo "Error while deleting config context"
         exit
     fi
 }
@@ -95,6 +117,9 @@ if [ "$1" == "--delete" ] || [ "$1" == "-d" ]; then
     delete_namespace "${NAMESPACE_DEV}"
     delete_namespace "${NAMESPACE_STAGE}"
 
+    delete_kubectl_context 
+
+    delete_certificates
 else 
 
     create_namespace "${NAMESPACE_DEV}"
@@ -109,7 +134,7 @@ else
     create_kubectl_context "${NAMESPACE_STAGE}"
     apply_role_resources "${NAMESPACE_STAGE}"
 
-    if ! kubectl config use-context $MINIKUBE_CONTEXT &> /dev/null ; then
+    if ! kubectl config use-context $MINIKUBE_CONTEXT ; then
         echo "New context is not available"
         exit
     fi
