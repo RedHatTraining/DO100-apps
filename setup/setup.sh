@@ -82,7 +82,7 @@ delete_kubectl_context() {
 }
 
 apply_role_resources() {
-    if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${NAMESPACE_DEV}/g" $SCRIPTPATH/files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
+    if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${1}/g" $SCRIPTPATH/files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
         echo "Could not apply RoleBinding resource"
         exit
     fi
