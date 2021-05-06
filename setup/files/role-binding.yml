@@ -21,6 +21,9 @@ rules:
 - apiGroups: [""]    # The default api-group, where basic resources are defined
   resources: ["*"]   # All resources in the api-group. See `kubectl api-resources --api-group="" -o name` 
   verbs: ["*"]       # All read and write verbs. Equals to ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]    
+  resources: ["*"]   
+  verbs: ["*"]       
 - apiGroups: ["networking.k8s.io"]
   resources: ["ingresses"]
   verbs: ["*"]

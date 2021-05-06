@@ -10,7 +10,7 @@ NAMESPACE_DEV=${USERNAME}-dev
 NAMESPACE_STAGE=${USERNAME}-stage
 
 create_certificates() {
-    echo "Creating certificates..."
+    echo "Creating certificates ..."
     if [ ! -d $CERT_DIRECTORY ]; then
         mkdir $CERT_DIRECTORY
     fi
@@ -25,7 +25,7 @@ create_certificates() {
 }
 
 delete_certificates() {
-    echo "Deleting certificates..."
+    echo "Deleting certificates ..."
     if ! rm ${MINIKUBE_DIR}/$USERNAME.key ; then
         echo "Error deleting key file ${MINIKUBE_DIR}/$USERNAME.key"
         exit
@@ -38,7 +38,7 @@ delete_certificates() {
 }
 
 create_namespace() {
-    echo "Creating namespace '${1}'..."
+    echo "Creating namespace '${1}' ..."
     if ! kubectl get namespace ${1}  > /dev/null 2>&1 ; then
         if ! kubectl create namespace ${1}  > /dev/null 2>&1 ; then
             echo "Error while creating namespace ${1}"
@@ -48,7 +48,7 @@ create_namespace() {
 }
 
 delete_namespace() {
-    echo "Deleting namespace '${1}'..."
+    echo "Deleting namespace '${1}' ..."
     if kubectl get namespace ${1}  > /dev/null 2>&1 ; then
         if ! kubectl delete namespace ${1}  > /dev/null 2>&1 ; then
             echo "Error while deleting namespace ${1}"
@@ -58,7 +58,7 @@ delete_namespace() {
 }
 
 configure_kubectl_credentials() {
-    echo "Creating Kubectl credentials ..."
+    echo "Creating Kubectl credentials for '${USERNAME}' ..."
     if ! kubectl config set-credentials $USERNAME --client-certificate=$USERNAME.crt --client-key=$USERNAME.key  > /dev/null 2>&1 ; then
         echo "Error while creating config credentials"
         exit
@@ -66,7 +66,7 @@ configure_kubectl_credentials() {
 }
 
 create_kubectl_context() {
-    echo "Creating Kubectl context $MINIKUBE_CONTEXT for user ${USERNAME} ..."
+    echo "Creating Kubectl context '$MINIKUBE_CONTEXT' for user '${USERNAME}' ..."
     if ! kubectl config set-context $MINIKUBE_CONTEXT --cluster=minikube --user=$USERNAME --namespace=${1}  > /dev/null 2>&1; then
         echo "Error while creating config context"
         exit
@@ -74,7 +74,7 @@ create_kubectl_context() {
 }
 
 delete_kubectl_context() {
-    echo "Deleting Kubectl context ${MINIKUBE_CONTEXT} ..."
+    echo "Deleting Kubectl context '${MINIKUBE_CONTEXT}' ..."
     if ! kubectl config delete-context $MINIKUBE_CONTEXT  > /dev/null 2>&1; then
         echo "Error while deleting config context"
         exit
@@ -82,7 +82,7 @@ delete_kubectl_context() {
 }
 
 apply_role_resources() {
-    echo "Creating role resources for user ${USERNAME} in namespace ${1}..."
+    echo "Creating role resources for user '${USERNAME}' in namespace '${1}' ..."
     if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${1}/g" $SCRIPTPATH/files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
         echo "Could not apply security resources"
         exit
@@ -97,7 +97,8 @@ use_kubectl_context() {
 }
 
 use_kubectl_namespace() {
-     if ! kubectl config set-context --current --namespace=${1} ; then
+    echo "Switching to namespace '${1}' ..."
+     if ! kubectl config set-context --current --namespace=${1}  > /dev/null 2>&1; then
         echo "Namespace ${1} is not available"
         exit
     fi
@@ -132,7 +133,7 @@ if [ "$1" == "--delete" ] || [ "$1" == "-d" ]; then
     use_kubectl_context "minikube"
 
     # Move to default namespace
-    kubectl config set-context --current --namespace=default
+    use_kubectl_namespace "default"
 
     delete_namespace "${NAMESPACE_DEV}"
     delete_namespace "${NAMESPACE_STAGE}"
@@ -155,7 +156,7 @@ else
     apply_role_resources "${NAMESPACE_STAGE}"
 
     use_kubectl_context $MINIKUBE_CONTEXT
-
-
+    use_kubectl_namespace "${NAMESPACE_DEV}"
 fi
+
 echo "OK!"
