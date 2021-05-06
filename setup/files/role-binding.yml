@@ -18,6 +18,9 @@ metadata:
   namespace: {namespace}
   name: pod-reader
 rules:
-- apiGroups: [""]
-  resources: ["pods"]
-  verbs: ["get", "watch", "list"]
+- apiGroups: [""]    # The default api-group, where basic resources are defined
+  resources: ["*"]   # All resources in the api-group. See `kubectl api-resources --api-group="" -o name` 
+  verbs: ["*"]       # All read and write verbs. Equals to ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["ingresses"]
+  verbs: ["*"]

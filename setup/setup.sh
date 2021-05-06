@@ -66,7 +66,7 @@ configure_kubectl_credentials() {
 }
 
 create_kubectl_context() {
-    echo "Creating Kubectl context $MINIKUBE_CONTEXT for namespace ${1} ..."
+    echo "Creating Kubectl context $MINIKUBE_CONTEXT for user ${USERNAME} ..."
     if ! kubectl config set-context $MINIKUBE_CONTEXT --cluster=minikube --user=$USERNAME --namespace=${1}  > /dev/null 2>&1; then
         echo "Error while creating config context"
         exit
@@ -82,11 +82,27 @@ delete_kubectl_context() {
 }
 
 apply_role_resources() {
+    echo "Creating role resources for user ${USERNAME} in namespace ${1}..."
     if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${1}/g" $SCRIPTPATH/files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
-        echo "Could not apply RoleBinding resource"
+        echo "Could not apply security resources"
         exit
     fi
 }
+
+use_kubectl_context() {
+     if ! kubectl config use-context ${1} ; then
+        echo "Context ${1} is not available"
+        exit
+    fi
+}
+
+use_kubectl_namespace() {
+     if ! kubectl config set-context --current --namespace=${1} ; then
+        echo "Namespace ${1} is not available"
+        exit
+    fi
+}
+
 
 if ! command -v openssl  > /dev/null 2>&1
 then
@@ -112,7 +128,11 @@ fi
 
 if [ "$1" == "--delete" ] || [ "$1" == "-d" ]; then
 
-    kubectl config use-context minikube
+    # Use the default context that relates to admin credentials
+    use_kubectl_context "minikube"
+
+    # Move to default namespace
+    kubectl config set-context --current --namespace=default
 
     delete_namespace "${NAMESPACE_DEV}"
     delete_namespace "${NAMESPACE_STAGE}"
@@ -120,6 +140,7 @@ if [ "$1" == "--delete" ] || [ "$1" == "-d" ]; then
     delete_kubectl_context 
 
     delete_certificates
+
 else 
 
     create_namespace "${NAMESPACE_DEV}"
@@ -129,15 +150,12 @@ else
     configure_kubectl_credentials
 
     create_kubectl_context "${NAMESPACE_DEV}"
-    apply_role_resources "${NAMESPACE_DEV}"
 
-    create_kubectl_context "${NAMESPACE_STAGE}"
+    apply_role_resources "${NAMESPACE_DEV}"
     apply_role_resources "${NAMESPACE_STAGE}"
 
-    if ! kubectl config use-context $MINIKUBE_CONTEXT ; then
-        echo "New context is not available"
-        exit
-    fi
+    use_kubectl_context $MINIKUBE_CONTEXT
+
 
 fi
 echo "OK!"
