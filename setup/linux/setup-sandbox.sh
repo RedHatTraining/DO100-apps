@@ -1,3 +1,5 @@
+#! /bin/sh
+
 OPENSHIFT_CLUSTER_NAME="openshift-cluster"
 OPENSHIFT_CREDENTIALS_NAME="openshift-credentials"
 OPENSHIFT_CONTEXT="openshift-context"
