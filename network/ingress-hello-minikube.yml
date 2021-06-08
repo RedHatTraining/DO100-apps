@@ -4,7 +4,7 @@ metadata:
   name: hello
 spec:
   rules:
-    - host: hello.example.com
+    - host: INGRESS-HOST
       http:
         paths:
           - path: /
