@@ -83,7 +83,7 @@ delete_kubectl_context() {
 
 apply_role_resources() {
     echo "Creating role resources for user '${USERNAME}' in namespace '${1}' ..."
-    if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${1}/g" $SCRIPTPATH/files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
+    if ! sed "s/{username}/${USERNAME}/g; s/{namespace}/${1}/g" $SCRIPTPATH/../files/role-binding.yml | kubectl apply -f -  > /dev/null 2>&1 ; then
         echo "Could not apply security resources"
         exit
     fi
